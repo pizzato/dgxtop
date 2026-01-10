@@ -403,8 +403,12 @@ class RichUI:
         )
 
     def _build_gpu_processes_panel(self, stats: Dict[str, Any]) -> Panel:
-        """Build GPU processes table similar to nvidia-smi"""
+        """Build GPU processes table similar to nvtop"""
         gpu_processes = stats.get("gpu_processes", [])
+        selected_idx = stats.get("selected_idx", 0)
+        sort_column = stats.get("sort_column", "GPU MEM")
+        kill_mode = stats.get("kill_mode", False)
+        sort_mode = stats.get("sort_mode", False)
 
         table = Table(
             show_header=True,
@@ -415,25 +419,52 @@ class RichUI:
         )
 
         table.add_column("PID", style="bold", justify="right")
-        table.add_column("Type", justify="center")
-        table.add_column("Process Name", style="bold")
-        table.add_column("GPU Mem (MiB)", justify="right")
+        table.add_column("USER", justify="left")
+        table.add_column("DEV", justify="center")
+        table.add_column("TYPE", justify="left")
+        table.add_column("GPU", justify="right")
+        table.add_column("GPU MEM", justify="right")
+        table.add_column("CPU", justify="right")
+        table.add_column("HOST MEM", justify="right")
+        table.add_column("Command")
 
-        for proc in gpu_processes[:8]:  # Show max 8 processes
+        for idx, proc in enumerate(gpu_processes[:6]):  # Show max 6 processes
+            is_selected = idx == selected_idx
+
+            # Style for selection - always use reverse for visibility
+            if is_selected:
+                row_style = "reverse"
+            else:
+                row_style = ""
+
             table.add_row(
                 str(proc.pid),
-                proc.process_type,
-                proc.name,
-                f"{proc.gpu_memory_mb:.0f}",
+                proc.user,
+                str(proc.gpu_index),
+                proc.process_type[:7],
+                f"{proc.gpu_util}%",
+                f"{proc.gpu_memory_mb:.0f}MiB",
+                f"{proc.cpu_percent}%",
+                f"{proc.host_memory_mb:.0f}MiB",
+                proc.command,
+                style=row_style,
             )
 
         if not gpu_processes:
-            table.add_row("-", "-", "No GPU processes running", "-")
+            table.add_row("-", "-", "-", "-", "-", "-", "-", "-", "No GPU processes running")
+
+        # Title with mode indicator
+        if kill_mode:
+            title = f"[bold red]GPU Processes - KILL MODE (Enter to confirm, Esc to cancel)[/bold red]"
+        elif sort_mode:
+            title = f"[bold yellow]GPU Processes - SORT MODE (Up/Down to select, Enter to confirm)[/bold yellow]"
+        else:
+            title = f"[bold]GPU Processes[/bold] [dim](sorted by {sort_column})[/dim]"
 
         return Panel(
             table,
-            title="[bold]GPU Processes[/bold]",
-            border_style=self.theme["primary"],
+            title=title,
+            border_style="red" if kill_mode else ("yellow" if sort_mode else self.theme["primary"]),
             padding=(0, 1),
         )
 
@@ -486,13 +517,24 @@ class RichUI:
         # GPU Processes
         layout["gpu_processes"].update(self._build_gpu_processes_panel(stats))
 
-        # Footer with copyright
+        # Footer with shortcuts
         footer_text = Text()
-        footer_text.append("© 2026 GigCoder.ai - DGX SPARK System Monitor", style="dim")
+        footer_text.append("s", style="reverse")
+        footer_text.append("Sort  ", style="dim")
+        footer_text.append("K", style="reverse")
+        footer_text.append("Kill  ", style="dim")
+        footer_text.append("j/k", style="reverse")
+        footer_text.append("Up/Down  ", style="dim")
+        footer_text.append("+/-", style="reverse")
+        footer_text.append("Speed  ", style="dim")
+        footer_text.append("q", style="reverse")
+        footer_text.append("Quit  ", style="dim")
+        footer_text.append("Enter", style="reverse")
+        footer_text.append("Confirm", style="dim")
         footer_panel = Panel(
             footer_text,
             border_style=self.theme["primary"],
-            padding=(0, 2),
+            padding=(0, 1),
         )
         layout["footer"].update(footer_panel)
 
