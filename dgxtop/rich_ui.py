@@ -402,6 +402,41 @@ class RichUI:
             padding=(0, 1),
         )
 
+    def _build_gpu_processes_panel(self, stats: Dict[str, Any]) -> Panel:
+        """Build GPU processes table similar to nvidia-smi"""
+        gpu_processes = stats.get("gpu_processes", [])
+
+        table = Table(
+            show_header=True,
+            header_style=f"bold {self.theme['primary']}",
+            border_style=self.theme["primary"],
+            box=None,
+            padding=(0, 1),
+        )
+
+        table.add_column("PID", style="bold", justify="right")
+        table.add_column("Type", justify="center")
+        table.add_column("Process Name", style="bold")
+        table.add_column("GPU Mem (MiB)", justify="right")
+
+        for proc in gpu_processes[:8]:  # Show max 8 processes
+            table.add_row(
+                str(proc.pid),
+                proc.process_type,
+                proc.name,
+                f"{proc.gpu_memory_mb:.0f}",
+            )
+
+        if not gpu_processes:
+            table.add_row("-", "-", "No GPU processes running", "-")
+
+        return Panel(
+            table,
+            title="[bold]GPU Processes[/bold]",
+            border_style=self.theme["primary"],
+            padding=(0, 1),
+        )
+
     def build_layout(self, stats: Dict[str, Any]) -> Layout:
         """Build the complete UI layout"""
         layout = Layout()
@@ -411,7 +446,8 @@ class RichUI:
             Layout(name="header", size=1),
             Layout(name="top", size=8),
             Layout(name="middle", size=6),
-            Layout(name="io_tables", size=8),  # Renamed from disk_table
+            Layout(name="io_tables", size=8),
+            Layout(name="gpu_processes", size=12),
             Layout(name="footer", size=3),
         )
 
@@ -447,16 +483,8 @@ class RichUI:
         layout["disk_table"].update(self._build_disk_table(stats))
         layout["network_table"].update(self._build_network_table(stats))
 
-        # Footer with copyright
-        footer_text = Text()
-        footer_text.append("© 2026 GigCoder.ai - DGX SPARK System Monitor", style="dim")
-        footer_panel = Panel(
-            footer_text,
-            border_style=self.theme["primary"],
-            padding=(0, 2),
-        )
-        layout["footer"].update(footer_panel)
-
+        # GPU Processes
+        layout["gpu_processes"].update(self._build_gpu_processes_panel(stats))
 
         # Footer with copyright
         footer_text = Text()

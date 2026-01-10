@@ -20,6 +20,7 @@ from rich.console import Console
 
 from config import AppConfig
 from gpu_monitor import GPUMonitor
+from gpu_processes_monitor import GPUProcessMonitor
 from system_monitor import SystemMonitor
 from disk_monitor import DiskMonitor
 from network_monitor import NetworkMonitor
@@ -34,6 +35,7 @@ class DGXTop:
         self.config = AppConfig()
         self.console = Console()
         self.gpu_monitor = GPUMonitor()
+        self.gpu_processes_monitor = GPUProcessMonitor()
         self.system_monitor = SystemMonitor()
         self.disk_monitor = DiskMonitor()
         self.network_monitor = NetworkMonitor()
@@ -77,6 +79,10 @@ class DGXTop:
         gpu_stats = self.gpu_monitor.get_stats()
         if gpu_stats:
             stats["gpu"] = gpu_stats
+
+        # GPU processes
+        gpu_processes = self.gpu_processes_monitor.get_stats()
+        stats["gpu_processes"] = gpu_processes
 
         # Disk stats with latency
         disk_stats = self.disk_monitor.get_device_stats_for_display()
