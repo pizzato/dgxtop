@@ -16,21 +16,59 @@ A performance monitoring CLI tool for Ubuntu inspired by asitop for Mac, with ad
 - **Lightweight**: Minimal dependencies, uses native Linux `/proc` filesystem
 - **Per-Drive Performance**: Detailed breakdown of I/O performance for each storage device
 
-## Installation
+## Installation on DGX Spark
 
-### From this fork
+### Prerequisites
+
+- NVIDIA DGX Spark with Ubuntu
+- Python 3.8+
+- `nvidia-smi` (included with NVIDIA drivers)
+
+### Quick Install (Build from Source)
+
+SSH into your DGX Spark and run:
 
 ```bash
+# 1. Install build dependencies
+sudo apt update
+sudo apt install -y git debhelper dh-python python3-all python3-setuptools dpkg-dev
+
+# 2. Clone the repository
 git clone https://github.com/sonusflow/dgxtop.git
 cd dgxtop
-sudo apt install debhelper dh-python python3-all python3-setuptools dpkg-dev
+
+# 3. Build the .deb package
 dpkg-buildpackage -us -uc -b
+
+# 4. Install
 sudo apt install ../dgxtop_1.0.0-1_all.deb
 ```
 
-### From original repository
+### Verify Installation
 
-See [GigCoder-ai/dgxtop](https://github.com/GigCoder-ai/dgxtop)
+```bash
+dgxtop --version
+dgxtop
+```
+
+### Uninstall
+
+```bash
+sudo apt remove dgxtop
+```
+
+### Upgrade
+
+```bash
+cd dgxtop
+git pull
+dpkg-buildpackage -us -uc -b
+sudo apt install --reinstall ../dgxtop_1.0.0-1_all.deb
+```
+
+### Original Repository
+
+For the original version without fork enhancements, see [GigCoder-ai/dgxtop](https://github.com/GigCoder-ai/dgxtop)
 
 ## Usage
 
