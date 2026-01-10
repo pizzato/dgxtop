@@ -517,7 +517,7 @@ class RichUI:
         # GPU Processes
         layout["gpu_processes"].update(self._build_gpu_processes_panel(stats))
 
-        # Footer with shortcuts
+        # Footer with shortcuts and copyright
         footer_text = Text()
         footer_text.append("s", style="reverse")
         footer_text.append("Sort  ", style="dim")
@@ -528,9 +528,8 @@ class RichUI:
         footer_text.append("+/-", style="reverse")
         footer_text.append("Speed  ", style="dim")
         footer_text.append("q", style="reverse")
-        footer_text.append("Quit  ", style="dim")
-        footer_text.append("Enter", style="reverse")
-        footer_text.append("Confirm", style="dim")
+        footer_text.append("Quit   ", style="dim")
+        footer_text.append("© 2026 GigCoder.ai | Fork: SonusFlow AI", style="dim italic")
         footer_panel = Panel(
             footer_text,
             border_style=self.theme["primary"],
