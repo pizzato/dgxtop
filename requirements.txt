@@ -1,4 +1,6 @@
 psutil>=5.8.0
 rich>=13.0.0
+paramiko>=3.0.0
 setuptools>=45.0.0
 wheel>=0.36.0
+tomli>=2.0.0; python_version < "3.11"
