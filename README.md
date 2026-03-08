@@ -2,7 +2,7 @@
 
 > **Fork Notice**: This is a fork of [GigCoder-ai/dgxtop](https://github.com/GigCoder-ai/dgxtop) with enhanced GPU process monitoring features. Maintained by [SonusFlow AI](https://github.com/sonusflow).
 
-A performance monitoring CLI tool for Ubuntu inspired by asitop for Mac, with added volume transfer speed monitoring capabilities.
+A performance monitoring CLI tool for Ubuntu inspired by asitop for Mac, with added volume transfer speed monitoring and multi-node cluster monitoring capabilities.
 
 ![DGXTOP Screenshot](screenshot.png)
 
@@ -15,6 +15,7 @@ A performance monitoring CLI tool for Ubuntu inspired by asitop for Mac, with ad
 - **Real-time Display**: Interactive terminal interface with customizable update intervals
 - **Lightweight**: Minimal dependencies, uses native Linux `/proc` filesystem
 - **Per-Drive Performance**: Detailed breakdown of I/O performance for each storage device
+- **Cluster Monitoring**: Monitor multiple DGX Spark nodes side-by-side in a single terminal
 
 ## Installation on DGX Spark
 
@@ -98,19 +99,100 @@ dgxtop --version             # Show version information
 | `+` / `-` | Speed up / slow down refresh |
 | `q` | Quit |
 
+---
+
+## Cluster Monitoring
+
+Monitor multiple DGX Spark nodes side-by-side in a single terminal view. Each node shows GPU, CPU, memory, load average, and top GPU processes at a glance.
+
+![DGXTOP Cluster Screenshot](screenshot_cluster.png)
+
+### Quick Start (Ad-hoc)
+
+Pass hostnames directly — the first host is assumed to be the local node:
+
+```bash
+dgxtop --cluster s1 s2 s3
+```
+
+### Cluster Config File
+
+For a persistent setup, create a config at `~/.config/dgxtop/cluster.toml`:
+
+```bash
+# Generate an example config file
+dgxtop --cluster-init
+```
+
+This writes `~/.config/dgxtop/cluster.toml`. Edit it to match your nodes:
+
+```toml
+[cluster]
+update_interval = 1.0
+
+[[cluster.nodes]]
+name = "s1"
+host = "s1"
+user = "dgx"
+local = true          # marks this as the local node
+
+[[cluster.nodes]]
+name = "s2"
+host = "s2"
+user = "dgx"
+
+[[cluster.nodes]]
+name = "s3"
+host = "s3"
+user = "dgx"
+```
+
+Once `~/.config/dgxtop/cluster.toml` exists, running `dgxtop` with no arguments automatically enters cluster mode.
+
+### Cluster Options
+
+| Option | Description |
+|--------|-------------|
+| `--cluster HOST [HOST ...]` | Ad-hoc cluster: space-separated list of hostnames |
+| `--cluster-config PATH` | Load a specific cluster config TOML file |
+| `--cluster-init` | Write an example `cluster.toml` to the default location and exit |
+
+### Cluster Interactive Controls
+
+| Key | Action |
+|-----|--------|
+| `1` / `2` / `3` ... | Drill into node N (full view for local node, detail panel for remote) |
+| `Esc` | Return to cluster summary |
+| `+` / `-` | Speed up / slow down refresh for all nodes |
+| `q` | Quit |
+
+### SSH Setup for Remote Nodes
+
+Cluster mode connects to remote nodes over SSH using `ssh-agent` or key-based auth. Make sure your SSH key is trusted on each node:
+
+```bash
+ssh-copy-id dgx@s2
+ssh-copy-id dgx@s3
+```
+
+Custom ports and usernames are supported in `cluster.toml` via `port` and `user` fields.
+
 ## Architecture
 
 ```
 dgxtop/
 ├── __init__.py              # Package initialization
-├── main.py                  # Main application entry point
+├── main.py                  # Main application entry point (single-node & cluster)
 ├── gpu_monitor.py           # GPU monitoring (nvidia-smi)
 ├── gpu_processes_monitor.py # GPU process monitoring (nvtop-style)
 ├── disk_monitor.py          # Disk I/O monitoring (/proc/diskstats)
 ├── system_monitor.py        # CPU, memory, network monitoring
 ├── network_monitor.py       # Network interface monitoring
-├── rich_ui.py               # Terminal UI (Rich library)
-├── config.py                # Configuration management
+├── rich_ui.py               # Single-node terminal UI (Rich library)
+├── cluster_config.py        # Cluster TOML config loader and dataclasses
+├── cluster_monitor.py       # Background SSH data collection for remote nodes
+├── cluster_ui.py            # Cluster summary and drill-down UI panels
+├── config.py                # Application configuration
 └── logger.py                # Logging system
 ```
 
@@ -166,6 +248,7 @@ Apache 2.0 License - see [LICENSE](LICENSE) file for details.
 - [x] Add GPU process monitoring
 - [x] Add interactive process navigation
 - [x] Add sort and kill functionality
+- [x] Add multi-node cluster monitoring
+- [x] Add cluster TOML configuration support
 - [ ] Implement alerting thresholds
-- [ ] Add configuration file support
 - [ ] Create systemd service option
